@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { dummyReportHtml, dummyNewsletterHtml } from '../data/templateData';
 
 export interface FilePreviewModalProps {
   isOpen: boolean;
@@ -8,7 +7,10 @@ export interface FilePreviewModalProps {
   itemTitle: string;
   type: 'report' | 'newsletter';
   recipientEmail?: string;
+  fileUrl?: string;
 }
+
+const emptyMessageHtml = `<!DOCTYPE html><html><body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:80vh;color:#94a3b8;margin:0;"><div style="text-align:center;"><p style="font-size:16px;font-weight:600;color:#64748b;">No document preview available</p><p style="font-size:13px;">No file URL was provided for this item.</p></div></body></html>`;
 
 export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   isOpen,
@@ -16,6 +18,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   fileName,
   itemTitle,
   type,
+  fileUrl,
 }) => {
   // Close on Escape key press
   useEffect(() => {
@@ -38,12 +41,9 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Resolve backend URL if configured, otherwise use template preview
+  // Resolve target URL: explicit S3 link > base API relative link
   const apiBase = import.meta.env.VITE_API_BASE_URL;
-  const backendFileUrl = apiBase ? `${apiBase}/files/${fileName}` : undefined;
-
-  // Official dummy template HTML from src/data
-  const previewHtml = type === 'report' ? dummyReportHtml : dummyNewsletterHtml;
+  const targetUrl = fileUrl || (apiBase ? `${apiBase}/files/${fileName}` : undefined);
 
   return (
     <div
@@ -92,8 +92,8 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         <div className="flex-1 w-full bg-slate-50 relative">
           <iframe
             title={fileName}
-            src={backendFileUrl}
-            srcDoc={!backendFileUrl ? previewHtml : undefined}
+            src={targetUrl}
+            srcDoc={!targetUrl ? emptyMessageHtml : undefined}
             className="w-full h-full border-0"
           />
         </div>

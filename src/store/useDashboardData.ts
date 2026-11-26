@@ -1,51 +1,71 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { MetricItem, DispatchItem } from '../types/dashboard';
-import { mockMetrics, mockDispatches } from '../data/mockData';
 import {
   fetchMetrics,
   fetchDispatches,
   updateDispatchStatusApi,
 } from '../api/dashboardService';
 
+const defaultMetrics: MetricItem[] = [
+  {
+    id: 'visits',
+    label: "Day's Total Visits",
+    value: '0',
+    change: '0%',
+    changeContext: 'vs prev day',
+    isPrimary: true,
+  },
+  {
+    id: 'engagement',
+    label: 'Engagement Events',
+    value: '0',
+    change: '0%',
+    changeContext: 'CTR: 0%',
+  },
+  {
+    id: 'orders',
+    label: 'Completed Orders',
+    value: '0',
+    change: '0%',
+    changeContext: 'conv. rate',
+  },
+  {
+    id: 'sales',
+    label: 'Day Gross Sales',
+    value: '$0.00',
+    change: '$0.00',
+    changeContext: 'vs yesterday',
+  },
+];
+
 export const useDashboardData = (pollIntervalMs = 5000) => {
-  const [metrics, setMetrics] = useState<MetricItem[]>(mockMetrics);
-  const [dispatches, setDispatches] = useState<DispatchItem[]>(mockDispatches);
+  const [metrics, setMetrics] = useState<MetricItem[]>(defaultMetrics);
+  const [dispatches, setDispatches] = useState<DispatchItem[]>([]);
   const [isLive, setIsLive] = useState(true);
 
   // Core data synchronization
   const syncData = useCallback(async () => {
     if (import.meta.env.VITE_API_BASE_URL) {
+      const todayUtc = new Date().toISOString().split('T')[0];
       const [latestMetrics, latestDispatches] = await Promise.all([
         fetchMetrics(),
-        fetchDispatches(),
+        fetchDispatches(todayUtc),
       ]);
-      setMetrics(latestMetrics);
-      setDispatches(latestDispatches);
-    } else {
-      // Local live simulation: increment live visits and events subtly
-      setMetrics((prev) =>
-        prev.map((m) => {
-          if (m.id === 'visits') {
-            const currentNumeric = parseInt(m.value.replace(/,/g, ''), 10);
-            const increment = Math.floor(Math.random() * 2); // 0 or 1 visit
-            const nextVal = currentNumeric + increment;
-            return {
-              ...m,
-              value: nextVal.toLocaleString(),
-            };
+
+      if (latestMetrics.length > 0) {
+        setMetrics(latestMetrics);
+      }
+
+      setDispatches((prev) => {
+        const localDecisions = new Map(prev.map((p) => [p.id, p.status]));
+        return latestDispatches.map((item) => {
+          const userStatus = localDecisions.get(item.id);
+          if (userStatus && userStatus !== 'Pending Review') {
+            return { ...item, status: userStatus };
           }
-          if (m.id === 'engagement') {
-            const currentNumeric = parseInt(m.value.replace(/,/g, ''), 10);
-            const increment = Math.random() > 0.6 ? 1 : 0;
-            const nextVal = currentNumeric + increment;
-            return {
-              ...m,
-              value: nextVal.toLocaleString(),
-            };
-          }
-          return m;
-        })
-      );
+          return item;
+        });
+      });
     }
   }, []);
 

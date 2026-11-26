@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import type { DispatchItem } from '../types/dashboard';
-import { mockDispatches } from '../data/mockData';
 import { FilePreviewModal } from './FilePreviewModal';
 
 interface DispatchesTableProps {
@@ -14,13 +13,14 @@ interface PreviewModalState {
   itemTitle: string;
   type: 'report' | 'newsletter';
   recipientEmail?: string;
+  fileUrl?: string;
 }
 
 export const DispatchesTable: React.FC<DispatchesTableProps> = ({
   items: externalItems,
   onStatusChange,
 }) => {
-  const [internalItems, setInternalItems] = useState<DispatchItem[]>(mockDispatches);
+  const [internalItems, setInternalItems] = useState<DispatchItem[]>([]);
   const items = externalItems ?? internalItems;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,7 +45,8 @@ export const DispatchesTable: React.FC<DispatchesTableProps> = ({
     fileName: string,
     itemTitle: string,
     type: 'report' | 'newsletter',
-    recipientEmail?: string
+    recipientEmail?: string,
+    fileUrl?: string
   ) => {
     setPreviewModal({
       isOpen: true,
@@ -53,6 +54,7 @@ export const DispatchesTable: React.FC<DispatchesTableProps> = ({
       itemTitle,
       type,
       recipientEmail,
+      fileUrl,
     });
   };
 
@@ -120,6 +122,13 @@ export const DispatchesTable: React.FC<DispatchesTableProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
+              {filteredItems.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                    No dispatches found
+                  </td>
+                </tr>
+              )}
               {filteredItems.map((item) => {
                 const isDecided = item.status !== 'Pending Review';
 
@@ -150,7 +159,8 @@ export const DispatchesTable: React.FC<DispatchesTableProps> = ({
                             item.performanceReport,
                             item.title,
                             'report',
-                            item.recipientEmail
+                            item.recipientEmail,
+                            item.reportUrl
                           )
                         }
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#EFF6FF] text-[#3B82F6] hover:bg-blue-100 text-xs font-medium border border-blue-100 transition-colors cursor-pointer"
@@ -181,7 +191,8 @@ export const DispatchesTable: React.FC<DispatchesTableProps> = ({
                             item.newsletterDraft,
                             item.title,
                             'newsletter',
-                            item.recipientEmail
+                            item.recipientEmail,
+                            item.newsletterUrl
                           )
                         }
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FAF5FF] text-[#9333EA] hover:bg-purple-100 text-xs font-medium border border-purple-100 transition-colors cursor-pointer"
@@ -276,6 +287,7 @@ export const DispatchesTable: React.FC<DispatchesTableProps> = ({
         itemTitle={previewModal.itemTitle}
         type={previewModal.type}
         recipientEmail={previewModal.recipientEmail}
+        fileUrl={previewModal.fileUrl}
       />
     </>
   );

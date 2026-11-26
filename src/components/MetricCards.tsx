@@ -1,12 +1,11 @@
 import React from 'react';
 import type { MetricItem } from '../types/dashboard';
-import { mockMetrics } from '../data/mockData';
 
 interface MetricCardsProps {
   metrics?: MetricItem[];
 }
 
-export const MetricCards: React.FC<MetricCardsProps> = ({ metrics = mockMetrics }) => {
+export const MetricCards: React.FC<MetricCardsProps> = ({ metrics = [] }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
       {metrics.map((item) => (
